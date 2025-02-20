@@ -13,13 +13,17 @@ import { PerfChartApiResp } from '@routes/perfChart';
 import got from '@lib/got';
 import { throttle } from 'throttle-debounce';
 import { TimeCounter } from '../statsUtils';
-import { FxMonitorHealth } from '@shared/enums';
+import { FxMonitorHealth, TxConfigState } from '@shared/enums';
+import { SYM_SYSTEM_AUTHOR } from '@lib/symbols';
+import quitProcess from '@lib/quitProcess';
 const console = consoleFactory(modulename);
 
 
 //Consts
 const LOG_DATA_FILE_VERSION = 1;
 const LOG_DATA_FILE_NAME = 'stats_svRuntime.json';
+const MAX_IDLE_TIME_MINUTES_SETUP = 20;
+const MAX_IDLE_TIME_MINUTES = 10;
 
 
 /**
@@ -43,6 +47,8 @@ export default class SvRuntimeMetrics {
         this.saveStatsHistory.bind(this),
         { noLeading: true }
     );
+    private lastConfigState: TxConfigState | null = null;
+    private recentNoPlayerCount: number | null = null;
 
     constructor() {
         setImmediate(() => {
@@ -54,6 +60,40 @@ export default class SvRuntimeMetrics {
             this.collectStats().catch((error) => {
                 console.verbose.warn('Error while collecting server stats.');
                 console.verbose.dir(error);
+            }).finally(async() => {
+                if (txManager.globalStatus.configState !== this.lastConfigState) {
+                    this.lastConfigState = txManager.globalStatus.configState;
+                    this.recentNoPlayerCount = null;
+                } else {
+                    if (
+                        txCore.fxMonitor.status.health === 'OFFLINE' ||
+                        txCore.fxMonitor.status.health === 'ONLINE'
+                    ) {
+                        if (txCore.fxMonitor.status.health === 'ONLINE' && txCore.fxPlayerlist.onlineCount > 0) {
+                            this.recentNoPlayerCount = null;
+                        } else {
+                            if (this.recentNoPlayerCount) {
+                                const noPlayerDuration = Date.now() - this.recentNoPlayerCount;
+                                const timeoutMinutes = txManager.globalStatus.configState === TxConfigState.Ready ? MAX_IDLE_TIME_MINUTES : MAX_IDLE_TIME_MINUTES_SETUP;
+                                if (noPlayerDuration >= timeoutMinutes * 60 * 1000) {
+                                    this.recentNoPlayerCount = null;
+                                    this.logServerClose(`No players for ${MAX_IDLE_TIME_MINUTES}m, killing server and hosted server instance`);
+
+                                    if (!txCore.fxRunner.isIdle) {
+                                        await txCore.fxRunner.killServer('idle timeout', SYM_SYSTEM_AUTHOR, false);
+                                    }
+
+                                    quitProcess(0);
+                                }
+                            } else {
+                                this.recentNoPlayerCount = Date.now();
+                            }
+                        }
+                    } else if (txCore.fxMonitor.status.health === 'PARTIAL') {
+                        // reset the idle timer if the server is coming online
+                        this.recentNoPlayerCount = null;
+                    }
+                }
             });
         }, 60 * 1000);
     }

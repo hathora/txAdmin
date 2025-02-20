@@ -3,7 +3,7 @@ import { fxRunnerStateAtom, txConfigStateAtom } from '@/hooks/status';
 import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 import { useAtomValue } from 'jotai';
-import { MegaphoneIcon, PowerIcon, PowerOffIcon, RotateCcwIcon } from 'lucide-react';
+import { MegaphoneIcon, PowerIcon, PowerOffIcon, RotateCcwIcon, OctagonXIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOpenConfirmDialog, useOpenPromptDialog } from '@/hooks/dialogs';
 import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
@@ -50,11 +50,12 @@ export default function ServerControls() {
         path: '/fxserver/commands'
     });
 
-    const handleServerControl = (action: 'start' | 'stop' | 'restart') => {
+    const handleServerControl = (action: 'start' | 'stop' | 'restart' | 'kill') => {
         const messageMap = {
             start: 'Starting server',
             stop: 'Stopping server',
             restart: 'Restarting server',
+            kill: 'Killing hosted server instance',
         }
         const toastLoadingMessage = `${messageMap[action]}...`;
         const callApi = () => {
@@ -81,6 +82,10 @@ export default function ServerControls() {
     const handleRestart = () => {
         if (!fxRunnerState.isChildAlive) return;
         handleServerControl('restart');
+    }
+    const handleKill = () => {
+        if (!fxRunnerState.isChildAlive) return;
+        handleServerControl('kill');
     }
 
     const handleAnnounce = () => {
@@ -223,6 +228,27 @@ export default function ServerControls() {
                         <p>
                             You do not have permission <br />
                             to send an Announcement.
+                        </p>
+                    )}
+                </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        onClick={handleKill}
+                        className={controlButtonsVariants({ type: 'destructive' })}
+                        disabled={!hasControlPerms}
+                    >
+                        <OctagonXIcon className='h-5' />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
+                    {hasControlPerms ? (
+                        <p>Kill hosted server instance</p>
+                    ) : (
+                        <p>
+                            You do not have permission <br />
+                            to kill the hosted server instance.
                         </p>
                     )}
                 </TooltipContent>

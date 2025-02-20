@@ -4,6 +4,7 @@ import consoleFactory from '@lib/console';
 import { ApiToastResp } from '@shared/genericApiTypes';
 import { msToShortishDuration } from '@lib/misc';
 import ConfigStore from '@modules/ConfigStore';
+import quitProcess from '@lib/quitProcess';
 const console = consoleFactory(modulename);
 
 
@@ -71,6 +72,15 @@ export default async function FXServerControls(ctx: AuthedCtx) {
         } else {
             return ctx.send<ApiToastResp>({ type: 'success', msg: 'The server is now starting.' });
         }
+
+    } else if (action === 'kill') {
+        if (!txCore.fxRunner.isIdle) {
+            ctx.admin.logCommand('STOP SERVER');
+            await txCore.fxRunner.killServer('admin request', ctx.admin.name, false);
+        }
+
+        ctx.admin.logCommand('STOP TXADMIN');
+        quitProcess(0);
 
     } else {
         return ctx.send<ApiToastResp>({
