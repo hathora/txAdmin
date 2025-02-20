@@ -569,6 +569,12 @@ export const txHostConfig = Object.freeze({
         dbPass: defaultDbPass,
         dbName: defaultDbName,
     },
+    hathora: {
+        enabled: false,
+        hostname: "",
+        port: 0,
+        ip: "",
+    },
 });
 
 

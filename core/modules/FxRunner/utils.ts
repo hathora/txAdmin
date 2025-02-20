@@ -116,6 +116,16 @@ export const getFxSpawnVariables = (): FxSpawnVariables => {
         '+exec', txConfig.server.cfgPath,
     ].flat(2).map(String);
 
+    if (convars.hathora.enabled) {
+        cmdArgs.push(
+            // These convars are needed for running on Hathora
+            '+set', 'sv_forceIndirectListing', 'true',
+            '+set', 'sv_listingHostOverride', `${convars.hathora.hostname}:${convars.hathora.port}`,
+            '+set', 'sv_proxyIPRanges', `"${convars.hathora.ip}/32"`,
+            '+set', 'sv_endpoints', `"${convars.hathora.ip}:${convars.hathora.port}"`,
+        );
+    }
+
     return {
         bin: osSpawnVars.bin,
         args: cmdArgs,

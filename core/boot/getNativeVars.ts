@@ -23,7 +23,7 @@ const replacedConvarWarning = (convarName: string, newName: string) => {
 
 
 /**
- * Native variables that are required for the boot process.  
+ * Native variables that are required for the boot process.
  * This file is not supposed to validate or default any of the values.
  */
 export const getNativeVars = (ignoreDeprecatedConfigs: boolean) => {
@@ -43,6 +43,23 @@ export const getNativeVars = (ignoreDeprecatedConfigs: boolean) => {
         console.warn(`WARNING: The 'serverProfile' ConVar is deprecated and will be removed in a future update.`);
         console.warn(`         To create multiple servers, set up a different TXHOST_DATA_PATH instead.`);
         anyWarnSent = true;
+    }
+
+    //Hathora convars
+    const hathoraHostname = getConvarString('hathoraHostname');
+    const hathoraIp = getConvarString('hathoraIp');
+    const hathoraPort = getConvarString('hathoraPort');
+    const hathora = {
+        enabled: false,
+        hostname: '',
+        port: 0,
+        ip: '',
+    };
+    if (hathoraHostname && hathoraIp && hathoraPort) {
+        hathora.enabled = true;
+        hathora.hostname = hathoraHostname;
+        hathora.port = parseInt(hathoraPort);
+        hathora.ip = hathoraIp;
     }
 
     //Convars replaced by TXHOST_* env vars
@@ -81,5 +98,8 @@ export const getNativeVars = (ignoreDeprecatedConfigs: boolean) => {
         txDataPath,
         txAdminPort,
         txAdminInterface,
+
+        //Hathora
+        hathora,
     };
 }
