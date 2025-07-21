@@ -104,13 +104,13 @@ export const getFxSpawnVariables = (): FxSpawnVariables => {
     if (!txConfig.server.dataPath) throw new Error('Missing server data path');
 
     const hathoraArgs = [];
-    if (convars.hathora.enabled) {
+    if (txHostConfig.hathora.enabled) {
         hathoraArgs.push(
             // These convars are needed for running on Hathora
             '+set', 'sv_forceIndirectListing', 'true',
-            '+set', 'sv_listingHostOverride', `${convars.hathora.hostname}:${convars.hathora.port}`,
-            '+set', 'sv_proxyIPRanges', `${convars.hathora.ip}/32`,
-            '+set', 'sv_endpoints', `${convars.hathora.ip}:${convars.hathora.port}`,
+            '+set', 'sv_listingHostOverride', `${txHostConfig.hathora.hostname}:${txHostConfig.hathora.port}`,
+            '+set', 'sv_proxyIPRanges', `${txHostConfig.hathora.ip}/32`,
+            '+set', 'sv_endpoints', `${txHostConfig.hathora.ip}:${txHostConfig.hathora.port}`,
         );
     }
 
